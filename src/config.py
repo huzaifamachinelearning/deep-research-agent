@@ -30,7 +30,11 @@ class ResearchConfig(BaseModel):
         default_factory=lambda: os.getenv("OPENAI_API_KEY", ""),
         description="OpenAI API key (required if using OpenAI)"
     )
-    
+
+    openai_base_url: str = Field(
+        default_factory=lambda: os.getenv("OPENAI_BASE_URL", "https://api.openai.com"),
+        description="OpenAI API Base URL (optional if using OpenAI)"
+    )
     # Ollama Configuration
     ollama_base_url: str = Field(
         default=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
