@@ -268,6 +268,7 @@ OLLAMA_BASE_URL=http://localhost:11434
 # For OpenAI (alternative)
 # MODEL_PROVIDER=openai
 # OPENAI_API_KEY=your_api_key_here
+# OPENAI_BASE_URL=https://api.openai.com # Optional: change this if you need to use a different endpoint
 # MODEL_NAME=gpt-4o-mini              # Recommended: gpt-4o-mini, gpt-4o, gpt-4-turbo
 # SUMMARIZATION_MODEL=gpt-4o-mini
 

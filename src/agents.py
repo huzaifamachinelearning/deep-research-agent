@@ -55,6 +55,7 @@ def get_llm(temperature: float = 0.7, model_override: str = None):
         logger.info(f"Using OpenAI model: {model_name}")
         return ChatOpenAI(
             model=model_name,
+            base_url=f"{config.openai_base_url}/v1",
             api_key=config.openai_api_key,
             temperature=temperature
         )
