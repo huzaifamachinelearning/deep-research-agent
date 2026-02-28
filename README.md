@@ -4,82 +4,98 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![LangGraph](https://img.shields.io/badge/LangGraph-0.2.57+-green.svg)](https://github.com/langchain-ai/langgraph)
 
-A production-ready multi-agent autonomous research system built with LangGraph and LangChain. Four specialized agents work together to conduct comprehensive research on any topic and generate detailed, citation-backed reports with credibility scoring and quality metrics. Supports both local models (Ollama) and cloud APIs.
+A production-ready multi-agent autonomous research system built with LangGraph and LangChain. Four specialized agents collaborate to conduct comprehensive research on any topic, generating detailed citation-backed reports with credibility scoring and quality metrics.
+
+**Supports:** Local models (Ollama, llama.cpp) and Cloud APIs (Google Gemini, OpenAI)
+
+---
+
+## Table of Contents
+
+- [Demo](#demo)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Project Structure](#project-structure)
+- [Key Components](#key-components)
+- [API Reference](#api-reference)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
 
 ## Demo
+
 https://github.com/user-attachments/assets/df8404c6-7423-4a49-864a-bd4d59885c1b
 
 *Watch the full demo video to see the Deep Research Agent in action, showcasing the multi-agent workflow, real-time progress updates, and comprehensive report generation.*
+
+---
 
 ## Features
 
 ### Core Capabilities
 
-- **Multi-Agent Architecture**: Four specialized autonomous agents (ResearchPlanner, ResearchSearcher, ResearchSynthesizer, ReportWriter) orchestrated by LangGraph's StateGraph. Each agent operates independently with its own tools and decision-making logic.
+| Feature | Description |
+|---------|-------------|
+| **Multi-Agent Architecture** | Four specialized autonomous agents orchestrated by LangGraph's StateGraph |
+| **Autonomous Research** | Search agent dynamically decides queries, sources, and extraction depth |
+| **Credibility Scoring** | Automatic source evaluation (0-100) based on domain authority |
+| **Quality Validation** | Section-level validation with retry logic and exponential backoff |
+| **Multi-Format Export** | Reports in Markdown, HTML, and plain text |
+| **LLM Usage Tracking** | Real-time monitoring of API calls, tokens, and costs |
+| **Research Caching** | 7-day TTL file-based caching with MD5 topic hashing |
+| **Web Interface** | Interactive Chainlit UI with real-time progress |
 
-- **Autonomous Research**: The search agent dynamically decides when to search, which queries to execute, and which sources warrant deep content extraction. This adaptive approach ensures quality over quantity, typically targeting 5-8 high-quality sources.
+### Production-Ready Features
 
-- **Credibility Scoring**: Automatic source evaluation using domain authority analysis. Sources are scored (0-100) based on trusted domains (.edu, .gov), HTTPS, suspicious patterns, and academic indicators. Low-credibility sources are automatically filtered before synthesis.
+| Feature | Description |
+|---------|-------------|
+| **Circuit Breaker** | Automatic failure detection and recovery for external services |
+| **Connection Pooling** | HTTP/2 with persistent connections via httpx |
+| **Checkpointing** | Workflow state persistence for crash recovery |
+| **Typed Exceptions** | Domain-specific error handling for better debugging |
+| **Dependency Injection** | Testable agent architecture with injectable LLMs |
+| **Search Provider Abstraction** | Extensible search backend (DuckDuckGo, with easy addition of others) |
 
-- **Quality Validation**: Section-level validation ensures minimum length requirements (500+ characters) and quality standards. Retry logic with exponential backoff handles failures gracefully, with up to 3 attempts per operation.
-
-- **Multi-Format Export**: Reports are automatically exported in three formats: Markdown (original), HTML (styled for web), and plain text (markdown stripped).
-
-- **LLM Usage Tracking**: Real-time monitoring of API calls, input/output tokens, and estimated costs. Per-agent breakdowns help identify optimization opportunities.
-
-- **Research Caching**: Intelligent file-based caching with 7-day TTL reduces redundant API calls. MD5-based topic hashing ensures accurate cache lookups.
-
-- **Web Interface**: Interactive Chainlit-based UI provides real-time progress updates, quality metrics, and multiple format downloads.
+---
 
 ## Architecture
 
-The system implements a four-stage pipeline orchestrated by LangGraph's StateGraph:
-
-```
-ResearchPlanner → ResearchSearcher → ResearchSynthesizer → ReportWriter
-```
+### High-Level Flow
 
 ![Deep Research Agent Flow Diagram](assets/flow.png)
 
-*Complete workflow diagram showing the multi-agent research pipeline, state transitions, and interactions between components.*
-
 ### Agent Responsibilities
 
-**ResearchPlanner**
-- Analyzes research topics and generates 3-5 research objectives
-- Creates 3 targeted search queries covering different aspects
+#### ResearchPlanner
+- Analyzes research topics and generates 3-5 SMART objectives
+- Creates targeted search queries covering different aspects
 - Designs report outline with up to 8 sections
-- Provides strategic guidance for the autonomous search agent
+- Uses structured JSON output for reliability
 
-**ResearchSearcher** (Autonomous Agent)
+#### ResearchSearcher (Autonomous Agent)
 - LangChain-powered autonomous agent using `create_agent()`
-- Dynamically decides which queries to execute and when to extract content
-- Uses `web_search` and `extract_webpage_content` tools autonomously
-- Adapts research strategy based on intermediate findings
-- Targets 5-8 high-quality sources with deep content extraction
-- All sources are scored for credibility and filtered before synthesis
+- Dynamically decides which queries to execute
+- Uses `web_search` and `extract_webpage_content` tools
+- All sources scored for credibility and filtered (default threshold: 40)
+- Circuit breaker protection against service failures
 
-**ResearchSynthesizer**
-- Analyzes aggregated search results with credibility awareness
-- Prioritizes HIGH-credibility sources (score ≥70) in findings
+#### ResearchSynthesizer
+- Analyzes aggregated results with credibility awareness
+- Prioritizes HIGH-credibility sources (score ≥70)
 - Resolves contradictions using credibility hierarchy
-- Extracts key insights and identifies patterns
-- Progressive truncation handles token limit errors gracefully
+- Progressive truncation handles token limits
 
-**ReportWriter**
-- Generates structured report sections with consistent academic tone
-- Adds proper citations with configurable styles (APA, MLA, Chicago, IEEE)
-- Validates section quality and re-generates on failures
-- Compiles final markdown document with reference section
+#### ReportWriter
+- Generates structured sections with academic tone
+- Adds proper citations (APA, MLA, Chicago, IEEE)
+- Validates section quality with retry on failure
+- Compiles final markdown with references
 
-### Workflow
-
-1. **Planning**: LLM generates research plan with objectives, queries, and outline
-2. **Autonomous Search**: Agent executes searches and extracts content from promising sources
-3. **Credibility Scoring**: All sources scored and filtered (default threshold: 40)
-4. **Synthesis**: Findings extracted with credibility-aware prioritization
-5. **Report Generation**: Structured sections written with citations
-6. **Export**: Reports saved in multiple formats to `outputs/` directory
+---
 
 ## Installation
 
@@ -87,9 +103,13 @@ ResearchPlanner → ResearchSearcher → ResearchSynthesizer → ReportWriter
 
 - Python 3.11+
 - pip or uv package manager
-- [Ollama](https://ollama.com/) (for local models) **OR** Google Gemini API key ([Get one free](https://makersuite.google.com/app/apikey)) **OR** OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
+- One of:
+  - [Ollama](https://ollama.com/) (local models)
+  - [llama.cpp](https://github.com/ggerganov/llama.cpp) (local models, maximum performance)
+  - [Google Gemini API](https://makersuite.google.com/app/apikey) (cloud)
+  - [OpenAI API](https://platform.openai.com/api-keys) (cloud)
 
-### Setup
+### Quick Start
 
 ```bash
 # Clone the repository
@@ -98,96 +118,62 @@ cd deep-research-agent
 
 # Create virtual environment
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure (choose one):
-# Option A - Ollama: Install Ollama, pull a model (e.g., ollama pull qwen2.5:7b)
-# Option B - Gemini: Get API key from https://makersuite.google.com/app/apikey
-# Option C - OpenAI: Get API key from https://platform.openai.com/api-keys
-
-# Create .env file (see Configuration section below)
+# Run
+python main.py
 ```
 
-### Using Ollama (Local Models)
-
-Ollama allows you to run powerful LLMs locally on your machine without API costs or internet dependency.
-
-**Quick Start:**
+### Using Ollama (Recommended for Local)
 
 ```bash
-# Install Ollama (macOS/Linux)
+# Install Ollama
 curl -fsSL https://ollama.com/install.sh | sh
 
-# Or download from https://ollama.com for other platforms
-
-# Pull a recommended model
+# Pull a model
 ollama pull qwen2.5:7b
 
-# Verify it's working
-ollama run qwen2.5:7b "Hello, test message"
-```
-
-**Configuration:**
-
-Create a `.env` file:
-```bash
+# Configure .env
 MODEL_PROVIDER=ollama
 MODEL_NAME=qwen2.5:7b
 SUMMARIZATION_MODEL=qwen2.5:7b
 ```
 
-> **Tip**: Ollama runs a local server at `http://localhost:11434` by default. The agent will automatically connect to it.
-
-### Using llama.cpp
-
-llama.cpp provides direct control over model execution with maximum performance on Mac M1/M2/M3 with Metal acceleration.
-
-**Quick Start:**
+### Using llama.cpp (Maximum Performance)
 
 ```bash
+# Download GGUF model
+huggingface-cli download Qwen/Qwen2.5-7B-Instruct-GGUF \
+  qwen2.5-7b-instruct-q4_k_m.gguf --local-dir ./models
 
-# 1. Download a GGUF model (e.g., Qwen2.5:7B q4_k_m quantization)
-cd ../..
-mkdir models
-# Download from Hugging Face
-huggingface-cli download Qwen/Qwen2.5-7B-Instruct-GGUF qwen2.5-7b-instruct-q4_k_m.gguf --local-dir ./models
+# Start server with tool calling
+./llama-server -m ./models/qwen2.5-7b-instruct-q4_k_m.gguf \
+  --host 0.0.0.0 --port 8080 -ngl 35 --ctx-size 4096 --jinja
 
-# 2. Start llama.cpp server with tool calling support
-cd llama.cpp/build/bin
-./llama-server -m ~/models/qwen2.5-7b-instruct-q4_k_m.gguf \
-  --host 0.0.0.0 \
-  --port 8080 \
-  -ngl 35 \
-  --ctx-size 4096 \
-  --jinja
-```
-
-**Configuration:**
-
-Create a `.env` file:
-```bash
+# Configure .env
 MODEL_PROVIDER=llamacpp
-MODEL_NAME=qwen2.5-7b-instruct-q4_k_m  # Model name (can be anything)
-SUMMARIZATION_MODEL=qwen2.5-7b-instruct-q4_k_m
+MODEL_NAME=qwen2.5-7b-instruct-q4_k_m
 LLAMACPP_BASE_URL=http://localhost:8080
 ```
 
-**Important Flags:**
-- `--jinja` - Required for tool/function calling support (used by research agents)
-- `-ngl 35` - Offload 35 layers to GPU (Metal acceleration)
-- `--ctx-size 4096` - Context window size
-- `--host 0.0.0.0` - Allow connections from any IP
-- `--port 8080` - Server port
+### Using Cloud APIs
 
-**Performance Tips:**
-- Metal acceleration provides ~2-3x speedup on M1/M2/M3
-- The server exposes an OpenAI-compatible API at `/v1/chat/completions`
-- Use `--n-gpu-layers` (or `-ngl`) to maximize GPU usage
+```bash
+# Gemini
+MODEL_PROVIDER=gemini
+GEMINI_API_KEY=your_api_key_here
+MODEL_NAME=gemini-2.5-flash
 
-> **Note**: llama.cpp offers more control and can be faster than Ollama, but requires manual setup. Choose Ollama for simplicity or llama.cpp for maximum performance.
+# OpenAI
+MODEL_PROVIDER=openai
+OPENAI_API_KEY=your_api_key_here
+MODEL_NAME=gpt-4o-mini
+```
+
+---
 
 ## Usage
 
@@ -201,6 +187,18 @@ python main.py
 python main.py "Impact of quantum computing on cryptography"
 ```
 
+### Web Interface
+
+```bash
+chainlit run app.py --host 127.0.0.1 --port 8000
+```
+
+Features:
+- Real-time progress with stage indicators
+- Quality metrics and LLM usage statistics
+- Multiple format downloads (MD, HTML, TXT)
+- Research history tracking
+
 ### Programmatic API
 
 ```python
@@ -208,125 +206,256 @@ import asyncio
 from src.graph import run_research
 
 async def research():
-    state = await run_research("Topic here", verbose=True, use_cache=True)
+    # Basic usage
+    state = await run_research(
+        topic="Your research topic",
+        verbose=True,
+        use_cache=True
+    )
     
-    # Access report
+    # Access results
     print(state["final_report"])
-    
-    # Access LLM metrics
-    print(f"LLM Calls: {state['llm_calls']}")
-    print(f"Input Tokens: {state['total_input_tokens']:,}")
-    print(f"Output Tokens: {state['total_output_tokens']:,}")
-    print(f"Total Tokens: {state['total_input_tokens'] + state['total_output_tokens']:,}")
-    
-    # Access quality score
-    if state.get("quality_score"):
-        print(f"Quality: {state['quality_score']['total_score']}/100")
+    print(f"Sources: {len(state['search_results'])}")
+    print(f"Findings: {len(state['key_findings'])}")
+    print(f"Tokens: {state['total_input_tokens'] + state['total_output_tokens']:,}")
 
 asyncio.run(research())
 ```
 
-### Web Interface
+### With Persistence (Crash Recovery)
 
-```bash
-# Start the web interface
-chainlit run app.py --host 127.0.0.1 --port 8000
+```python
+from src.graph import run_research_with_persistence, resume_research
+
+# Run with SQLite persistence
+state = await run_research_with_persistence(
+    topic="Your topic",
+    thread_id="my-research-001"
+)
+
+# Resume interrupted workflow
+state = await resume_research(thread_id="my-research-001")
 ```
 
-The web interface provides:
-- Interactive chat-based research
-- Real-time progress updates with stage indicators
-- Quality metrics and LLM usage statistics
-- Multiple format downloads (Markdown, HTML, TXT)
-- Research history tracking
+---
 
 ## Configuration
 
-Environment variables in `.env`:
+### Environment Variables
 
 ```bash
-# Model Provider (choose one)
-MODEL_PROVIDER=ollama                # Options: ollama, llamacpp, gemini, openai
+# =============================================================================
+# MODEL PROVIDER (required)
+# =============================================================================
+MODEL_PROVIDER=gemini              # Options: ollama, llamacpp, gemini, openai
 
-# For Ollama
-MODEL_NAME=qwen2.5:7b                # Recommended: qwen2.5:7b, llama3.1:8b, mistral:7b
+# =============================================================================
+# PROVIDER-SPECIFIC SETTINGS
+# =============================================================================
+
+# Ollama
+MODEL_NAME=qwen2.5:7b
 SUMMARIZATION_MODEL=qwen2.5:7b
 OLLAMA_BASE_URL=http://localhost:11434
 
-# For llama.cpp (alternative - requires --jinja flag on server)
-# MODEL_PROVIDER=llamacpp
-# MODEL_NAME=qwen2.5-7b-instruct-q4_k_m
-# SUMMARIZATION_MODEL=qwen2.5-7b-instruct-q4_k_m
-# LLAMACPP_BASE_URL=http://localhost:8080
+# llama.cpp
+MODEL_NAME=qwen2.5-7b-instruct-q4_k_m
+LLAMACPP_BASE_URL=http://localhost:8080
 
-# For Gemini (alternative)
-# MODEL_PROVIDER=gemini
-# GEMINI_API_KEY=your_api_key_here
-# MODEL_NAME=gemini-2.5-flash
-# SUMMARIZATION_MODEL=gemini-2.5-flash
+# Gemini
+GEMINI_API_KEY=your_api_key_here
+MODEL_NAME=gemini-2.5-flash
+SUMMARIZATION_MODEL=gemini-2.5-flash
 
-# For OpenAI (alternative)
-# MODEL_PROVIDER=openai
-# OPENAI_API_KEY=your_api_key_here
-# OPENAI_BASE_URL=https://api.openai.com # Optional: change this if you need to use a different endpoint
-# MODEL_NAME=gpt-4o-mini              # Recommended: gpt-4o-mini, gpt-4o, gpt-4-turbo
-# SUMMARIZATION_MODEL=gpt-4o-mini
+# OpenAI
+OPENAI_API_KEY=your_api_key_here
+OPENAI_BASE_URL=https://api.openai.com  # Optional
+MODEL_NAME=gpt-4o-mini
+SUMMARIZATION_MODEL=gpt-4o-mini
 
-# Optional - Search Settings
-MAX_SEARCH_QUERIES=3
-MAX_SEARCH_RESULTS_PER_QUERY=3
-MIN_CREDIBILITY_SCORE=40
+# =============================================================================
+# SEARCH SETTINGS (optional)
+# =============================================================================
+MAX_SEARCH_QUERIES=3               # Number of search queries
+MAX_SEARCH_RESULTS_PER_QUERY=3     # Results per query
+MIN_CREDIBILITY_SCORE=40           # Filter threshold (0-100)
 
-# Optional - Report Settings
-MAX_REPORT_SECTIONS=8
-CITATION_STYLE=apa                   # Options: apa, mla, chicago, ieee
+# =============================================================================
+# REPORT SETTINGS (optional)
+# =============================================================================
+MAX_REPORT_SECTIONS=8              # Maximum sections in report
+CITATION_STYLE=apa                 # Options: apa, mla, chicago, ieee
 ```
 
 ### Model Provider Comparison
 
-**Ollama (Local Models):**
-- Free, no API costs
-- Works offline, privacy-focused
-- Faster response times (no network latency)
-- No rate limits
-- Easy setup and model management
-- Requires ~5-8GB RAM for good models
-- Initial model download (~4-5GB per model)
+| Provider | Cost | Privacy | Speed | Setup |
+|----------|------|---------|-------|-------|
+| **Ollama** | Free | Local | Fast | Easy |
+| **llama.cpp** | Free | Local | Fastest | Manual |
+| **Gemini** | Free tier | Cloud | Fast | API key |
+| **OpenAI** | Pay-per-use | Cloud | Fast | API key |
 
-**llama.cpp (Local Models):**
-- Free, no API costs
-- Works offline, maximum privacy
-- Fastest local inference with Metal acceleration
-- No rate limits
-- Fine-grained control over model parameters
-- Lower memory usage with quantization
-- Requires manual setup and compilation
-- Requires ~4-8GB RAM depending on quantization
-- Best for: Maximum performance on M1/M2/M3 Macs
+---
 
-**Gemini (Cloud API):**
-- No local resources needed
-- Latest cutting-edge models
-- Consistently fast across devices
-- Requires API key and internet
-- API costs (free tier available)
+## Project Structure
 
-**OpenAI (Cloud API):**
-- No local resources needed
-- Industry-leading models (GPT-4, GPT-4o)
-- Excellent performance and reliability
-- Requires API key and internet
-- Pay-per-use pricing (competitive rates)
-- Recommended models: `gpt-4o-mini` (cost-effective), `gpt-4o` (best quality)
+```
+deep-research-agent/
+├── src/
+│   ├── __init__.py           # Package initialization
+│   ├── config.py             # Configuration management (Pydantic)
+│   ├── state.py              # State models (ResearchState, etc.)
+│   ├── agents.py             # Agent implementations with DI
+│   ├── graph.py              # LangGraph workflow + checkpointing
+│   ├── callbacks.py          # Progress callback system
+│   ├── llm_tracker.py        # Token and cost tracking
+│   ├── exceptions.py         # Typed domain exceptions
+│   │
+│   ├── prompts/              # Extracted prompt templates
+│   │   ├── __init__.py
+│   │   ├── planner.py        # Planning prompts
+│   │   ├── searcher.py       # Search prompts
+│   │   ├── synthesizer.py    # Synthesis prompts
+│   │   └── writer.py         # Writing prompts
+│   │
+│   └── utils/
+│       ├── __init__.py
+│       ├── tools.py          # LangChain @tool functions
+│       ├── web_utils.py      # httpx client, circuit breaker, search providers
+│       ├── cache.py          # Research caching (7-day TTL)
+│       ├── credibility.py    # Source credibility scoring
+│       ├── citations.py      # Citation formatting
+│       ├── exports.py        # Multi-format export
+│       └── history.py        # Research history
+│
+├── outputs/                  # Generated reports
+├── .cache/
+│   ├── research/             # Cached results
+│   ├── checkpoints/          # Workflow checkpoints (SQLite)
+│   └── research_history.json
+│
+├── assets/                   # Documentation assets
+├── main.py                   # CLI entry point
+├── app.py                    # Chainlit web interface
+├── requirements.txt          # Dependencies
+├── pyproject.toml            # Project metadata
+├── LICENSE                   # MIT License
+└── README.md
+```
+
+---
+
+## Key Components
+
+### Exception Hierarchy
+
+```python
+DeepResearchError
+├── ConfigurationError
+├── PlanningError
+├── SearchError
+│   └── RateLimitError
+├── ContentExtractionError
+├── SynthesisError
+├── ReportGenerationError
+├── CircuitOpenError
+└── LLMError
+```
+
+### Credibility Scoring
+
+Sources are scored (0-100) based on:
+
+| Factor | Points |
+|--------|--------|
+| Trusted domain (.edu, .gov, academic) | +30 |
+| HTTPS enabled | +5 |
+| Academic/research path | +10 |
+| Suspicious TLD (.xyz, .tk) | -20 |
+| No HTTPS | -10 |
+
+Default filter threshold: 40 (configurable via `MIN_CREDIBILITY_SCORE`)
+
+### Circuit Breaker States
+
+```
+CLOSED ──► (5 failures) ──► OPEN ──► (30s timeout) ──► HALF_OPEN ──► (success) ──► CLOSED
+                              │                            │
+                              └──────── (failure) ◄────────┘
+```
+
+---
+
+## API Reference
+
+### Core Functions
+
+```python
+# Main research function
+async def run_research(
+    topic: str,
+    verbose: bool = True,
+    use_cache: bool = True,
+    use_checkpoints: bool = True,
+    thread_id: Optional[str] = None
+) -> Dict[str, Any]
+
+# With SQLite persistence
+async def run_research_with_persistence(
+    topic: str,
+    verbose: bool = True,
+    use_cache: bool = True,
+    thread_id: Optional[str] = None
+) -> Dict[str, Any]
+
+# Resume interrupted workflow
+async def resume_research(
+    thread_id: str,
+    additional_input: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]
+
+# Check workflow state
+async def get_workflow_state(thread_id: str) -> Optional[Dict[str, Any]]
+
+# List saved threads
+def list_research_threads() -> List[str]
+```
+
+### Response Structure
+
+```python
+{
+    "research_topic": str,
+    "plan": ResearchPlan,
+    "search_results": List[SearchResult],
+    "credibility_scores": List[Dict],
+    "key_findings": List[str],
+    "report_sections": List[ReportSection],
+    "final_report": str,
+    "current_stage": str,
+    "error": Optional[str],
+    "iterations": int,
+    "llm_calls": int,
+    "total_input_tokens": int,
+    "total_output_tokens": int,
+    "llm_call_details": List[Dict]
+}
+```
+
+---
 
 ## Output Format
 
-Generated reports follow this structure:
+Reports follow this structure:
 
 ```markdown
 # [Research Topic]
 
 **Deep Research Report**
+
+## Executive Summary
+[Overview with source count and section count]
 
 ## Research Objectives
 1. [Objective 1]
@@ -344,89 +473,89 @@ Generated reports follow this structure:
 ---
 
 ## References
-1. [Formatted citation according to selected style]
-2. [Formatted citation according to selected style]
+1. [Formatted citation - APA/MLA/Chicago/IEEE]
+2. [Formatted citation]
 ...
+
+---
+
+**Note:** X high-credibility sources were prioritized.
 ```
 
-Reports are automatically exported in three formats:
-- **Markdown** (`.md`) - Original format with full markdown syntax
-- **HTML** (`.html`) - Styled web-ready format
-- **Plain Text** (`.txt`) - Markdown stripped, plain text version
+---
 
-All reports are saved to the `outputs/` directory with timestamps.
+## Development
 
-## Project Structure
+### Running Tests
 
-```
-deep-research-agent/
-├── src/
-│   ├── __init__.py       # Package initialization
-│   ├── config.py         # Configuration management (Pydantic models)
-│   ├── state.py          # State models (ResearchState, ResearchPlan, etc.)
-│   ├── agents.py         # Agent implementations (Planner, Searcher, Synthesizer, Writer)
-│   ├── graph.py          # LangGraph workflow orchestration
-│   ├── llm_tracker.py    # LLM call and token tracking
-│   └── utils/
-│       ├── __init__.py   # Utils package
-│       ├── tools.py      # LangChain tools (@tool decorated for agents)
-│       ├── web_utils.py  # Search & extraction implementations
-│       ├── cache.py      # Research result caching (7-day TTL)
-│       ├── credibility.py # Source credibility scoring and filtering
-│       ├── exports.py    # Multi-format export utilities
-│       ├── citations.py  # Citation formatting (APA, MLA, Chicago, IEEE)
-│       └── history.py    # Research history tracking
-├── outputs/              # Generated reports (MD, HTML, TXT)
-├── .cache/               # Cache and history storage
-│   ├── research/         # Cached research results
-│   └── research_history.json  # Research history
-├── main.py               # CLI entry point
-├── app.py                # Chainlit web interface
-├── requirements.txt      # Python dependencies
-├── pyproject.toml        # Project metadata
-├── LICENSE               # MIT License
-└── README.md             # This file
+```bash
+pytest tests/ -v
 ```
 
-## Key Components
+### Adding a New Search Provider
 
-### State Management (`src/state.py`)
+```python
+# src/utils/web_utils.py
+class GoogleSearchProvider(SearchProvider):
+    @property
+    def name(self) -> str:
+        return "google"
+    
+    async def search(self, query: str, max_results: int) -> List[SearchResult]:
+        # Implementation
+        pass
 
-Centralized state using Pydantic models tracks research progress, search results, findings, and LLM usage metrics throughout the workflow.
+# Register in WebSearchTool
+tool = WebSearchTool(providers=[
+    DuckDuckGoProvider(),
+    GoogleSearchProvider()  # Fallback
+])
+```
 
-### Tools Layer (`src/utils/tools.py`)
+### Customizing Prompts
 
-LangChain tools decorated with `@tool` enable autonomous agent tool-calling:
-- `web_search`: DuckDuckGo integration for web searches
-- `extract_webpage_content`: BeautifulSoup4-based content extraction
+Edit files in `src/prompts/`:
+- `planner.py` - Research planning strategy
+- `searcher.py` - Search agent instructions
+- `synthesizer.py` - Synthesis methodology
+- `writer.py` - Report writing style
 
-### Credibility Scorer (`src/utils/credibility.py`)
+---
 
-Evaluates sources based on:
-- Domain authority (trusted domains: +30 points)
-- HTTPS enabled (+5 points)
-- Academic/research paths (+10 points)
-- Suspicious patterns (-20 points)
+## Contributing
 
-Sources are automatically filtered and sorted by credibility before synthesis.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Development Note
-
-The core ideation, architecture design, and logic of this project are the result of original research and understanding. While AI tools were used to assist with code restructuring and implementation, the fundamental concepts, agent workflows, credibility scoring methodology, and overall system design reflect independent research and development.
-
-## Contact
-
-For questions, issues, or collaboration:
-
-- **GitHub**: [tarun7r](https://github.com/tarun7r)
-- **LinkedIn**: [Tarun Sai Goddu](https://www.linkedin.com/in/tarunsaigoddu/)
-- **Hugging Face**: [tarun7r](https://huggingface.co/tarun7r)
-- **Email**: tarunsaiaa@gmail.com
+---
 
 ## License
 
 MIT License - See [LICENSE](LICENSE) file for details.
 
+---
+
 ## Acknowledgments
 
-Built with [LangGraph](https://github.com/langchain-ai/langgraph) and [LangChain](https://github.com/langchain-ai/langchain). Supports [Ollama](https://ollama.com/) and [llama.cpp](https://github.com/ggerganov/llama.cpp) for local models, [Google Gemini](https://ai.google.dev/) and [OpenAI](https://openai.com/) APIs. Web search via [DuckDuckGo](https://duckduckgo.com/).
+Built with:
+- [LangGraph](https://github.com/langchain-ai/langgraph) - Workflow orchestration
+- [LangChain](https://github.com/langchain-ai/langchain) - LLM framework
+- [Chainlit](https://github.com/Chainlit/chainlit) - Web interface
+- [httpx](https://www.python-httpx.org/) - Async HTTP client
+- [DuckDuckGo](https://duckduckgo.com/) - Web search
+
+Supports:
+- [Ollama](https://ollama.com/) & [llama.cpp](https://github.com/ggerganov/llama.cpp) - Local models
+- [Google Gemini](https://ai.google.dev/) & [OpenAI](https://openai.com/) - Cloud APIs
+
+---
+
+## Contact
+
+- **GitHub**: [tarun7r](https://github.com/tarun7r)
+- **LinkedIn**: [Tarun Sai Goddu](https://www.linkedin.com/in/tarunsaigoddu/)
+- **Hugging Face**: [tarun7r](https://huggingface.co/tarun7r)
+- **Email**: tarunsaiaa@gmail.com
