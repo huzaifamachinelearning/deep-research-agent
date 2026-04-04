@@ -5,7 +5,12 @@ from langchain_core.tools import tool
 import logging
 import json
 
-from src.utils.web_utils import WebSearchTool as WebSearchImpl, ContentExtractor as ContentExtractorImpl
+from src.utils.web_utils import (
+    WebSearchTool as WebSearchImpl,
+    ContentExtractor as ContentExtractorImpl,
+    DuckDuckGoProvider,
+    TavilyProvider,
+)
 from src.state import SearchResult
 from src.utils.citations import CitationFormatter
 from src.config import config
@@ -15,7 +20,19 @@ logger = logging.getLogger(__name__)
 
 
 # Initialize tool implementations with config values
-_search_impl = WebSearchImpl(max_results=config.max_search_results_per_query)
+def _build_search_providers():
+    """Build the search providers list based on config.search_provider."""
+    if config.search_provider == "tavily":
+        return [TavilyProvider(api_key=config.tavily_api_key or None,
+                               max_results=config.max_search_results_per_query)]
+    # Default: DuckDuckGo
+    return [DuckDuckGoProvider(config.max_search_results_per_query)]
+
+
+_search_impl = WebSearchImpl(
+    max_results=config.max_search_results_per_query,
+    providers=_build_search_providers(),
+)
 _extractor_impl = ContentExtractorImpl(timeout=10)
 _citation_formatter = CitationFormatter()
 
