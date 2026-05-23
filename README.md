@@ -22,7 +22,7 @@ A production-ready multi-agent autonomous research system built with LangGraph a
 - [Key Components](#key-components)
 - [API Reference](#api-reference)
 - [Contributing](#contributing)
-- [License](#license)
+
 
 ---
 
@@ -522,19 +522,11 @@ Edit files in `src/prompts/`:
 
 ---
 
-## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
----
 
-## License
 
-MIT License - See [LICENSE](LICENSE) file for details.
+
 
 ---
 
@@ -553,9 +545,4 @@ Supports:
 
 ---
 
-## Contact
 
-- **GitHub**: [tarun7r](https://github.com/tarun7r)
-- **LinkedIn**: [Tarun Sai Goddu](https://www.linkedin.com/in/tarunsaigoddu/)
-- **Hugging Face**: [tarun7r](https://huggingface.co/tarun7r)
-- **Email**: tarunsaiaa@gmail.com
