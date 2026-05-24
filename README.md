@@ -1,7 +1,6 @@
 # Deep Research Agent
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![LangGraph](https://img.shields.io/badge/LangGraph-0.2.57+-green.svg)](https://github.com/langchain-ai/langgraph)
 
 A production-ready multi-agent autonomous research system built with LangGraph and LangChain. Four specialized agents collaborate to conduct comprehensive research on any topic, generating detailed citation-backed reports with credibility scoring and quality metrics.
@@ -21,7 +20,7 @@ A production-ready multi-agent autonomous research system built with LangGraph a
 - [Project Structure](#project-structure)
 - [Key Components](#key-components)
 - [API Reference](#api-reference)
-- [Contributing](#contributing)
+
 
 
 ---
